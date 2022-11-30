@@ -31,7 +31,7 @@ private:
 			scr = h = l = 0;
 			return;
 		}
-		vvll prev; // prev[h][v]
+		vvll prev; 
 		vvll last;
 		std::vector <uint64_t> prev_0(n);
 		for (int32_t i = 0; i < n; i++) {
@@ -41,9 +41,6 @@ private:
 		for (int32_t _scr = 1; true; _scr++) {
 			for (int32_t _h = 0; _h <= _scr; _h++) {
 				int32_t _l = _scr - _h;
-				if (_scr == 4 && _h == 2) {
-					_scr = 4;
-				}
 				last.push_back(std::vector <uint64_t>(n, 0));
 				for (int32_t v = 0; v < n; v++) { // calculating last[_h][v]
 					for (int32_t u = 0; u < n; u++) { // last edge might be u -> v
