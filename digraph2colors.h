@@ -7,7 +7,7 @@
 std::vector <int32_t> getOnesPositions(uint64_t x) {
 	std::vector <int32_t> v;
 	while (x > 0) {
-		int32_t dist = _tzcnt_u64(x);
+		int32_t dist = __builtin_ctz(x);
 		v.push_back(dist);
 		x -= ((uint64_t)1 << dist);
 	}
@@ -17,7 +17,7 @@ std::vector <int32_t> getOnesPositions(uint64_t x) {
 typedef std::vector <std::vector <int32_t>> vvi;
 typedef std::vector < std::vector <uint64_t>> vvll;
 
-class diGraph2 {
+class diGraph2colors {
 private:
 	int32_t n;
 	vvi A, B;
@@ -26,19 +26,28 @@ private:
 
 	vvi outNeighbour;
 
+	int32_t _MAX_BOUND;
+
+	std::vector <std::vector <std::pair <int, int>>> loc_scr;
+
 	void calculateScramblingIndex() {
+		_MAX_BOUND = (3 * n * n * n + 2 * n * n - 2 * n + 1) / 2; //for n >= 5
+		//std::cout << _MAX_BOUND << '\n';
 		if (n == 1) {
 			scr = h = l = 0;
 			return;
 		}
-		vvll prev; 
+		vvll prev; // prev[h][v]
 		vvll last;
+
+		loc_scr.resize(n, std::vector <std::pair <int, int>> (n, {-1, -1}));
+
 		std::vector <uint64_t> prev_0(n);
 		for (int32_t i = 0; i < n; i++) {
 			prev_0[i] = ((uint64_t)1 << i);
 		}
 		prev.push_back(prev_0);
-		for (int32_t _scr = 1; true; _scr++) {
+		for (int32_t _scr = 1; _scr <= _MAX_BOUND; _scr++) {
 			for (int32_t _h = 0; _h <= _scr; _h++) {
 				int32_t _l = _scr - _h;
 				last.push_back(std::vector <uint64_t>(n, 0));
@@ -59,8 +68,12 @@ private:
 					std::vector <int32_t> bits = getOnesPositions(last[_h][out_n]);
 					for (int i = 0; i < bits.size(); i++) {
 						for (int j = i + 1; j < bits.size(); j++) {
-							successful_pairs += (outNeighbour[i][j] == -1);
-							outNeighbour[i][j] = out_n;
+							successful_pairs += (outNeighbour[bits[i]][bits[j]] == -1);
+							outNeighbour[bits[i]][bits[j]] = out_n;
+							if (loc_scr[bits[i]][bits[j]] == std::make_pair(-1, -1)) {
+								loc_scr[bits[i]][bits[j]] = {_h, _scr - _h};
+								loc_scr[bits[j]][bits[i]] = {_h, _scr - _h};
+							}
 						}
 					}
 				}
@@ -68,6 +81,19 @@ private:
 					scr = _scr;
 					h = _h;
 					l = _l;
+
+					std::cout << "Scrambling Index Found! It's equal to " << scr << "=" << h << "+" << l << "\n";
+					for (int v = 0; v < n; v++) {
+						std::cout << "At vertex " << v + 1 << " collect these vertices: ";
+						for (int u = 0; u < n; u++) {
+							if ((1ll << u) & last[h][v]) {
+								std::cout << u + 1 << ' ';
+							}
+						}
+						std::cout << '\n';
+						//std::cout << last[h][v] <<  '\n';
+					}
+
 					for (int i = 0; i < n; i++) {
 						for (int j = 0; j < i; j++) {
 							outNeighbour[i][j] = outNeighbour[j][i];
@@ -79,11 +105,11 @@ private:
 				else {
 					std::fill(outNeighbour.begin(), outNeighbour.end(), std::vector <int32_t>(n, -1));
 				}
-
 			}
 			prev.clear();
 			std::swap(prev, last);
 		}
+		scr = -1;
 	}
 
 	std::string separator;
@@ -99,8 +125,8 @@ private:
 	}
 
 public:
-	diGraph2() {}
-	diGraph2(const vvi& _A, const vvi& _B) {
+	diGraph2colors() {}
+	diGraph2colors(const vvi& _A, const vvi& _B) {
 		assert(_A.size() == _B.size());
 		for (int i = 0; i < _A.size(); i++) {
 			assert(_A[i].size() == _A.size() && _B[i].size() == _A.size());
@@ -151,9 +177,25 @@ public:
 	vvi get_outneighbours() const {
 		return outNeighbour;
 	}
+
+	void describe_local_scrambling() const {
+		std::cout << "Scrambling Index is " << scr << '\n';
+		std::cout << "Local Scrambling Index is:\n";
+		for (int i = 0; i < n; i++) {
+			for (int j = 0; j < n; j++) {
+				if (i == j) {
+					std::cout << "0 ";
+				} else {
+					std::cout << loc_scr[i][j].first + loc_scr[i][j].second << ' ';
+				}
+			}
+			std::cout << '\n';
+		}
+		std::cout << '\n';
+	}
 	
-	void describe() const {
-		std::cout << "Scarmbling Index is " << scr << '\n';
+	void describe_outneighbours() const {
+		std::cout << "Scrambling Index is " << scr << '\n';
 		std::cout << "(h, l) values are " << h << ' ' << l << '\n';
 		std::cout << "Table of common outneighbours:\n";
 		std::cout << separator << '\n' << first_row << '\n' << separator << '\n';
