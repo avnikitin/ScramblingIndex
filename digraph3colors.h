@@ -34,8 +34,8 @@ private:
 			std::vector <int32_t> bits = getOnesPositions(last[_h][_l][out_n]);
 			for (int i = 0; i < bits.size(); i++) {
 				for (int j = i + 1; j < bits.size(); j++) {
-					successful_pairs += (outNeighbour[i][j] == -1);
-					outNeighbour[i][j] = out_n;
+					successful_pairs += (outNeighbour[bits[i]][bits[j]] == -1);
+					outNeighbour[bits[i]][bits[j]] = out_n;
 				}
 			}
 		}
